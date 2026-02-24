@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Environment Variables (CRITICAL: Never commit these)
+.env
+
+# Alembic
+alembic/versions/__pycache__/
+# Note: Keep the migration .py files in alembic/versions/! 
+# They are part of your source code now.
+
+# IDEs
+.vscode/
+.idea/
+
+# Database / Docker
+# If you mount local volumes for Postgres data, ignore them here
+pg_data/
+db_data/
+
+# OS specific
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs
+*.log
