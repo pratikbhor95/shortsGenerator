@@ -57,7 +57,7 @@ def run_video_pipeline():
         os.makedirs("assets/videos", exist_ok=True)
 
         # 1. Timing
-        sc_dur = get_audio_duration(job.audio_path) / 4
+        sc_dur = (get_audio_duration(job.audio_path) / 4 ) + 0.5 # Add a small buffer to ensure we don't cut off the audio early
 
         # 2. Parallel Render
         clips = [None] * 4
