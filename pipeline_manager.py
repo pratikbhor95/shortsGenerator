@@ -3,6 +3,9 @@ import time
 import logging
 import sys
 import os
+from sqlalchemy import or_
+from database import SessionLocal
+from models import VideoJob
 
 # Setup logging
 logging.basicConfig(
@@ -13,66 +16,59 @@ logging.basicConfig(
 logger = logging.getLogger("PIPELINE_MANAGER")
 
 def run_sequential(script_name):
-    """Executes a script and blocks until completion. Returns True only on success."""
+    """Executes a script and blocks until completion."""
     logger.info(f"--- STARTING: {script_name} ---")
     try:
-        # sys.executable ensures we use the same Python interpreter and .venv
         subprocess.run([sys.executable, script_name], check=True)
         return True
     except subprocess.CalledProcessError:
-        logger.error(f"CRITICAL ERROR: {script_name} failed (non-zero exit code).")
-        return False
-    except Exception as e:
-        logger.error(f"UNEXPECTED ERROR in {script_name}: {e}")
+        logger.error(f"CRITICAL ERROR: {script_name} failed.")
         return False
 
 def main():
+    session = SessionLocal()
     start_time = time.time()
-    logger.info("ShortsGenerator Engine Initialized.")
-
-    # PHASE 1: Sequential Logical Foundation
-    # --------------------------------------------------
-    if not run_sequential("news_service.py"): 
-        logger.error("Pipeline Aborted at News stage.")
-        sys.exit(1)
-        
-    if not run_sequential("script_service.py"): 
-        logger.error("Pipeline Aborted at Script stage.")
-        sys.exit(1)
-
-    # PHASE 2: Concurrent Asset Generation
-    # --------------------------------------------------
-    logger.info("--- FORKING: Launching Audio & Image services in parallel ---")
     
-    # Start processes without blocking
+    # STEP 0: THE GATEKEEPER CHECK
+    # Check if there are ANY jobs that aren't finished yet
+    existing_job = session.query(VideoJob).filter(
+        or_(
+            VideoJob.status != "completed",
+            VideoJob.image_status != "completed"
+        )
+    ).first()
+    session.close() # Close session immediately to avoid DB locks during subprocesses
+
+    if existing_job:
+        logger.info(f"RESUMING: Found incomplete job {existing_job.id}. Skipping News Fetch.")
+    else:
+        logger.info("SYSTEM IDLE: Fetching new news...")
+        if not run_sequential("news_service.py"): 
+            sys.exit(1)
+
+    # PHASE 1: Generate Script (Gemini)
+    if not run_sequential("script_service.py"): 
+        sys.exit(1)
+
+    # PHASE 2: Concurrent Asset Generation (Audio & Images)
+    # We run these in parallel to save time
+    logger.info("--- FORKING: Audio & Image services ---")
     proc_audio = subprocess.Popen([sys.executable, "audio_service.py"])
     proc_image = subprocess.Popen([sys.executable, "image_service.py"])
 
-    # Blocking wait for both forks to rejoin
-    logger.info("Waiting for parallel API responses (AWS & Hugging Face)...")
     proc_audio.wait()
     proc_image.wait()
 
-    # Check return codes for parallel services
-    if proc_audio.returncode != 0:
-        logger.error("Audio Service failed. Check audio_service.py logs.")
-        sys.exit(1)
-    if proc_image.returncode != 0:
-        logger.error("Image Service failed. Check image_service.py logs.")
+    if proc_audio.returncode != 0 or proc_image.returncode != 0:
+        logger.error("Parallel asset generation failed.")
         sys.exit(1)
 
-    logger.info("Parallel asset generation successful.")
-
-    # PHASE 3: The Gatekeeper - Final Rendering
-    # --------------------------------------------------
+    # PHASE 3: Final Rendering (FFmpeg)
     if not run_sequential("video_service.py"):
-        logger.error("Pipeline Aborted at Video Rendering stage.")
         sys.exit(1)
 
     total_time = time.time() - start_time
-    logger.info("==============================================")
-    logger.info(f"PIPELINE FULLY SUCCESSFUL. Total duration: {total_time:.2f}s")
-    logger.info("==============================================")
+    logger.info(f"PIPELINE SUCCESSFUL. Total duration: {total_time:.2f}s")
 
 if __name__ == "__main__":
     main()

@@ -91,13 +91,14 @@ def run_video_pipeline():
         # Outline=3: Professional-grade border thickness.
         style = (
             "Fontname=Arial,"
-            "Fontsize=75,"
+            "Fontsize=20,"
             "PrimaryColour=&H00FFFF,"
             "OutlineColour=&H000000,"
             "BorderStyle=1,"
-            "Outline=4,"
+            "Outline=3,"
             "Shadow=0,"
-            "Alignment=5,"
+            "Alignment=10,"
+            "MarginV=200"
         )
             # "MarginV=400"
         
