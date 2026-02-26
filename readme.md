@@ -18,6 +18,7 @@ Most automated "faceless channel" scripts fail because they rely on fragile web 
 | Component | Technology | Purpose |
 | :--- | :--- | :--- |
 | **Logic & Control** | Python 3.10+ | Core pipeline execution and API orchestration. |
+| **API** | FastAPI | Manual job injection and control. |
 | **The Brain** | Google Gemini 2.5 Flash | Script generation and strict JSON prompt extraction. |
 | **Audio Synthesis** | AWS Polly | High-quality text-to-speech narration and SRT generation. |
 | **Visual Assets** | Pollinations AI | Generation of vertical (1080x1920) static image assets. |
@@ -90,10 +91,41 @@ DB_PASSWORD=your_secure_password
    alembic upgrade head
    ```
 
-6. **Run the pipeline:**
+6. **Run the automated pipeline:**
    ```bash
    python pipeline_manager.py
    ```
+   This will run the full, automated news-gathering and video generation process.
+
+## Custom Story Ingestion API
+
+This project includes a FastAPI interface to manually inject stories into the pipeline, bypassing the automated news scraper. This is useful for forcing the system to cover a specific topic or for testing.
+
+### 1. Run the API Server
+In a separate terminal, start the Uvicorn server from the project root:
+```bash
+uvicorn api:app --reload
+```
+The API will be live at `http://127.0.0.1:8000`.
+
+### 2. Submit a Manual Job
+Send a `POST` request to the `/api/jobs/manual` endpoint. This will add a new story to the database with a `pending` status, where it will be picked up by the `script_service` on the next pipeline run.
+
+**Example using cURL:**
+```bash
+curl -X 'POST' \
+  'http://127.0.0.1:8000/api/jobs/manual' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title": "NVIDIA Unveils Next-Gen Blackwell GPUs",
+    "url": "https://example.com/nvidia-blackwell-gpus",
+    "source_name": "The Verge",
+    "description": "A detailed brief about the new Blackwell architecture and its implications for AI."
+  }'
+```
+
+The API will protect against duplicate URLs, ensuring pipeline integrity.
 
 ## Project Structure
 ```
@@ -102,6 +134,7 @@ DB_PASSWORD=your_secure_password
 ├── assets/               # Generated assets (audio, images, videos)
 ├── .gitignore
 ├── alembic.ini           # Alembic configuration
+├── api.py                # FastAPI manual ingestion API
 ├── audio_service.py      # Generates audio from script
 ├── config.py             # Application configuration
 ├── database.py           # Database connection setup
