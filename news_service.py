@@ -93,7 +93,7 @@ def scrape_news():
         
         stmt = select(VideoJob.title).order_by(VideoJob.created_at.desc()).limit(15)
         existing_titles = session.execute(stmt).scalars().all()
-        is_duplicate = any(fuzz.token_sort_ratio(title.lower(), t.lower()) > 70 for t in existing_titles)
+        is_duplicate = any(fuzz.token_sort_ratio(title.lower(), t.lower()) > 50 for t in existing_titles)
 
         if not url_exists and not is_duplicate:
             new_job = VideoJob(
