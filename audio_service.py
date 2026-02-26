@@ -37,15 +37,15 @@ def run_audio_pipeline():
         logger.info(f"Generating Audio/SRT for Job: {job.id}")
         text = job.ai_script.get("narration_script")
         
-        # Audio
-        audio_res = polly.synthesize_speech(Text=text, OutputFormat='mp3', VoiceId='Matthew')
+        # Audio Matthew is a solid, natural voice with good pacing for news. Polly's neural voices are more expensive but worth it for the quality boost.
+        audio_res = polly.synthesize_speech(Text=text, OutputFormat='mp3', VoiceId='Aditi' if os.getenv("USE_POLLY_ADITI") == "true" else 'Matthew', Engine='standard')
         audio_path = f"assets/audio/{job.id}.mp3"
         os.makedirs("assets/audio", exist_ok=True)
         with open(audio_path, 'wb') as f:
             f.write(audio_res['AudioStream'].read())
 
         # Marks
-        marks_res = polly.synthesize_speech(Text=text, OutputFormat='json', VoiceId='Matthew', SpeechMarkTypes=['word'])
+        marks_res = polly.synthesize_speech(Text=text, OutputFormat='json', VoiceId='Aditi' if os.getenv("USE_POLLY_ADITI") == "true" else 'Matthew', SpeechMarkTypes=['word'], Engine='standard')
         generate_srt(marks_res['AudioStream'].read().decode('utf-8'), audio_path.replace(".mp3", ".srt"))
 
         job.audio_path = audio_path

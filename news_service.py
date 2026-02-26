@@ -21,7 +21,8 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 MODEL_WATERFALL = [
     "gemini-2.5-flash",
     "gemini-3-flash-preview",
-    "gemini-2.5-flash-lite"
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-pro"
 ]
 
 def generate_with_fallback(prompt, config, use_json=False):
