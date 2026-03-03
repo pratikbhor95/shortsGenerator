@@ -93,8 +93,14 @@ DB_PASSWORD=your_secure_password
 
 6. **Run the automated pipeline:**
    ```bash
-   python pipeline_manager.py
+   python main.py --lang en
    ```
+   or
+
+   ```bash
+   python main.py --lang hindi
+   ```
+
    This will run the full, automated news-gathering and video generation process.
 
 ## Custom Story Ingestion API
