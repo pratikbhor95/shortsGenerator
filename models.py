@@ -11,8 +11,8 @@ class VideoJob(Base):
     
     # Authenticity Columns
     title = Column(String(500), nullable=False)
-    news_url = Column(String(1000), unique=True, nullable=False) # Unique URL prevents dupes
-    news_source = Column(String(255), nullable=True) # e.g., "The Hindu", "MEA India"
+    news_url = Column(Text, unique=True, nullable=False) # Unique URL prevents dupes
+    news_source = Column(Text, nullable=True) # e.g., "The Hindu", "MEA India"
     published_date = Column(String(100), nullable=True) # Stored as string for flexibility
     
     # Content & Processing
